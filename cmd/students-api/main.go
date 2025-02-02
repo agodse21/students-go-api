@@ -11,19 +11,29 @@ import (
 	"time"
 
 	"github.com/agodse21/students-go-api/internal/config"
+	"github.com/agodse21/students-go-api/internal/http/handlers/student"
+	"github.com/agodse21/students-go-api/internal/storage/sqlite"
 )
 
 func main() {
 	// Load config
 	cfg := config.MustLoad()
 	// db setup
+
+	storage, er := sqlite.New(cfg)
+
+	if er != nil {
+		log.Fatal(er)
+	}
+
+	slog.Info("Connected to database", slog.String("env", cfg.Env))
 	// setup router
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to Students API"))
-	})
+	router.HandleFunc("POST /students/create", student.New(storage))
+	router.HandleFunc("GET /students/{id}", student.GetById(storage))
+	router.HandleFunc("GET /students", student.GetAll(storage))
 
 	// setup server
 
@@ -66,3 +76,6 @@ func main() {
 	slog.Info("Server gracefully shutdown")
 
 }
+
+// run command
+// go run cmd/students-api/main.go  -config config/local.yaml
